@@ -4,8 +4,8 @@ var redWall = new Image();
 var blackWall = new Image();
 var marioX = 1;
 var marioY = 1;
-blackWall.src = "images/background.png";
-redWall.src = "images/maze.png";
+blackWall.src = "images/mariobrick.jpg";
+redWall.src = "images/background.png";
 //--------------------------------------------------------random map generation---------------------------------------------------------------------------------
 var borderRow = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 var hollowRow = [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0];
@@ -25,6 +25,8 @@ shuffleArray(randomizedRow);
 var mapArray = [];
 //build border rows at first and last row, hollow row every odd row, random row every even row
 var hallTiles = [];
+var currentZombies = [];
+var staticZombies = [];
 for (var i = 0; i < 9; i++) {
     if (i == 0 || i == 8) {
         mapArray.push(borderRow);
@@ -45,6 +47,11 @@ for (var i = 0; i < 9; i++) {
         mapArray.push(randomRow);
         for (var m = 0; m < randomizedRow.length; m++) {
             if (randomizedRow[m] == 1) {
+                hallTiles.push({ x: m + 1, y: i });
+            }
+            if (randomizedRow[m] == 2) {
+                currentZombies.push({ x: m + 1, y: i });
+                staticZombies.push({ x: m + 1, y: i });
                 hallTiles.push({ x: m + 1, y: i });
             }
         }
@@ -74,7 +81,20 @@ blackWall.onload = function () {
         posY += 32;
     }
 };
-//---------------------------------------------------------player movement------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------horrific death--------------------------------------------------------------------------------------
+function gameOver() {
+    if ((currentZombies[2].x == currentMario[0].x) &&
+        (currentZombies[2].y == currentMario[0].y)) {
+        player.src = "images/mariodeath.gif";
+        player.style.position = 'absolute';
+        player.style.right = 8 + 'px';
+        player.style.top = 8 + 'px';
+        player.height = 300;
+        player.width = 300;
+        clearInterval(gameTime);
+    }
+}
+//---------------------------------------------------------------------------------------------player movement----------------------------------------------------------------------------------------
 var y = 8;
 var x = 8;
 var player = document.getElementById('player');
@@ -110,7 +130,7 @@ document.addEventListener('keydown', function (e) {
             }
         }
     }
-    if (e.keyCode == 39) {
+    else if (e.keyCode == 39) {
         for (var i = 0; i < hallTiles.length; i++) {
             if ((currentMario[0].x == hallTiles[i].x - 1) &&
                 (currentMario[0].y == hallTiles[i].y)) {
@@ -123,7 +143,166 @@ document.addEventListener('keydown', function (e) {
     currentMario.push({ x: marioX, y: marioY });
     player.style.top = y + 32 + 'px';
     player.style.left = x + 32 + 'px';
+    gameOver();
 });
-//------------------------------------------------------------------Zombies--------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------Zombies---------------------------------------------------------------------------------------------------
 var zombie1 = document.getElementById('zombie1');
+var zombie2 = document.getElementById('zombie2');
+var zombie3 = document.getElementById('zombie3');
+var zombieY = (currentZombies[2].y * 32) + 8;
+var zombieX = (currentZombies[2].x * 32) + 8;
+function zombie1MoveUp() {
+    for (var i = 0; i < hallTiles.length; i++) {
+        if ((currentZombies[2].x == hallTiles[i].x) &&
+            (currentZombies[2].y - 1 == hallTiles[i].y)) {
+            zombieY = zombieY - 32;
+            currentZombies[2].y -= 1;
+            zombie1.style.top = currentZombies[2].y * 32 + 8 + 'px';
+            currentZombies[2].y = (zombieY - 8) / 32;
+            gameOver();
+            break;
+        }
+    }
+}
+function zombie1MoveLeft() {
+    for (var i = 0; i < hallTiles.length; i++) {
+        if ((((currentZombies[2].y == hallTiles[i].y) ||
+            (currentZombies[2].x - 1 == staticZombies[2].x)) &&
+            (currentZombies[2].x == hallTiles[i].x + 1))) {
+            zombieX = zombieX - 32;
+            currentZombies[2].x -= 1;
+            currentZombies[2].x = (zombieX - 8) / 32;
+            zombie1.style.left = currentZombies[2].x * 32 + 8 + 'px';
+            gameOver();
+            break;
+        }
+    }
+}
+function zombie1MoveDown() {
+    for (var i = 0; i < hallTiles.length; i++) {
+        if ((currentZombies[2].x == hallTiles[i].x) &&
+            (currentZombies[2].y + 1 == hallTiles[i].y)) {
+            zombieY = zombieY + 32;
+            currentZombies[2].y += 1;
+            currentZombies[2].y = (zombieY - 8) / 32;
+            zombie1.style.top = currentZombies[2].y * 32 + 8 + 'px';
+            gameOver();
+            break;
+        }
+    }
+}
+function zombie1MoveRight() {
+    for (var i = 0; i < hallTiles.length; i++) {
+        if ((((currentZombies[2].y == hallTiles[i].y) ||
+            (currentZombies[2].x + 1 == staticZombies[2].x)) &&
+            (currentZombies[2].x == hallTiles[i].x - 1))) {
+            zombieX = zombieX + 32;
+            currentZombies[2].x += 1;
+            currentZombies[2].x = (zombieX - 8) / 32;
+            zombie1.style.left = currentZombies[2].x * 32 + 8 + 'px';
+            gameOver();
+            break;
+        }
+    }
+}
+function followMario() {
+    var random = Math.floor(Math.random() * 2);
+    //up and left
+    if ((currentMario[0].x <= currentZombies[2].x) &&
+        (currentMario[0].y <= currentZombies[2].y)) {
+        if (random == 0) {
+            zombie1MoveUp();
+            console.log('random up');
+        }
+        else if (random == 1) {
+            zombie1MoveLeft();
+            console.log('random left');
+        }
+        ;
+    }
+    else if ((currentMario[0].x >= currentZombies[2].x) &&
+        (currentMario[0].y <= currentZombies[2].y)) {
+        if (random == 0) {
+            zombie1MoveUp();
+            console.log('random up');
+        }
+        else if (random == 1) {
+            zombie1MoveRight();
+            console.log('random right');
+        }
+    }
+    else if ((currentMario[0].x >= currentZombies[2].x) &&
+        (currentMario[0].y >= currentZombies[2].y)) {
+        if (random == 0) {
+            zombie1MoveDown();
+            console.log('random down');
+        }
+        else if (random == 1) {
+            zombie1MoveRight();
+            console.log('random right');
+        }
+    }
+    else if ((currentMario[0].x <= currentZombies[2].x) &&
+        (currentMario[0].y > currentZombies[2].y)) {
+        if (random == 0) {
+            zombie1MoveDown();
+            console.log('random down');
+        }
+        else if (random == 1) {
+            zombie1MoveLeft();
+            console.log('random left');
+        }
+    }
+}
+//// Y level and left
+//if ((currentMario[0].y = currentZombies[2].y) &&
+//    (currentMario[0].x < currentZombies[2].x)) {
+//    zombie1MoveLeft();
+//    console.log('left');
+//}
+//// X level and up
+//if ((currentMario[0].x = currentZombies[2].x) &&
+//    (currentMario[0].y < currentZombies[2].y)) {
+//    zombie1MoveUp();
+//    console.log('up');
+//}
+////X level and down
+//if ((currentMario[0].x = currentZombies[2].x) &&
+//    (currentMario[0].y > currentZombies[2].y)) {
+//    zombie1MoveDown();
+//    console.log('down');
+////Y level and right
+//if ((currentMario[0].x > currentZombies[2].x) &&
+//    (currentMario[0].y = currentZombies[2].y)) {
+//    zombie1MoveRight();
+//    console.log('right');
+//}
+//function zombie1MoveUp() {
+//function zombie1MoveUp() {
+//    for (let i = 0; i < hallTiles.length; i++) {
+//        if ((currentZombies[2].x == hallTiles[i].x) &&
+//            (currentZombies[2].y - 1 == hallTiles[i].y)) {
+//            zombieY = zombieY - 32;
+//            currentZombies[2].y -= 1;
+//            zombie1.style.top = currentZombies[2].y * 32 + 8 + 'px';
+//            currentZombies[2].y = (zombieY - 8) / 32;
+//            gameOver();
+//            break;
+//        }
+//    }
+//}
+var gameTime = setInterval(function () { followMario(); }, 700);
+//zombieMove(zombieX, currentZombies[2].x, -1, "left");
+//function zombieMove(zombie, currentZombiesCoordinate, operation, zombieStyle) {
+//    //zombieY = zombieY - 32;
+//    //        currentZombies[2].y -= 1;
+//    //        zombie1.style.top = currentZombies[2].y * 32 + 8 + 'px';
+//    //        currentZombies[2].y = (zombieY - 8) / 32;
+//    //        gameOver();
+//    zombieY = zombieY - 32;
+//    currentZombies[2].y -= 1;
+//    zombie1.style.top = currentZombies[2].y * 32 + 8 + 'px';
+//    currentZombies[2].y = (zombieY - 8) / 32;
+//    gameOver();
+//} 
 //# sourceMappingURL=brainEaters.js.map
